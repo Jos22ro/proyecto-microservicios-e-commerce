@@ -7,7 +7,11 @@ use App\Http\Controllers\orderItemController;
 use App\Http\Controllers\productController;
 use App\Http\Controllers\categoryController;
 
+<<<<<<< HEAD
 Route::middleware( 'jwt')->group(function () {
+=======
+Route::middleware('jwt')->group(function () {
+>>>>>>> bb14d22 (cambios requeridos)
     Route::apiResource('orders', orderController::class);
     Route::apiResource('order-items', orderItemController::class);
     Route::apiResource('products', productController::class);
