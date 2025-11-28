@@ -6,11 +6,17 @@ use Illuminate\Http\Request;
 use App\Models\Category;
 use Illuminate\Support\Facades\Validator;
 <<<<<<< HEAD
+<<<<<<< HEAD
 use App\Http\Resources\CategoryResource;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 =======
 >>>>>>> bb14d22 (cambios requeridos)
+=======
+use App\Http\Resources\CategoryResource;
+use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
+>>>>>>> fix
 class categoryController extends Controller
 {
     public function index()
@@ -22,15 +28,22 @@ class categoryController extends Controller
             ], 404);
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
         return CategoryResource::collection($categories);
 =======
         return response()->json($categories);
 >>>>>>> bb14d22 (cambios requeridos)
+=======
+        return CategoryResource::collection($categories);
+>>>>>>> fix
     }
     public function show($id)
     {
         $category = Category::find($id);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> fix
         if (!$category) {
             return response()->json(['message' => 'Category not found'], 404);
         }
@@ -44,6 +57,7 @@ class categoryController extends Controller
         return (new CategoryResource($category))
             ->response()
             ->setStatusCode(201);
+<<<<<<< HEAD
 =======
         return response()->json($category);
     }
@@ -62,16 +76,22 @@ class categoryController extends Controller
         $category = Category::create($request->all());
         return response()->json($category);
 >>>>>>> bb14d22 (cambios requeridos)
+=======
+>>>>>>> fix
     }
     public function update(Request $request, $id)
     {
         $category = Category::find($id);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> fix
         if (!$category) {
             return response()->json(['message' => 'Category not found'], 404);
         }
         $category->update($request->all());
         return new CategoryResource($category);
+<<<<<<< HEAD
 =======
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
@@ -86,16 +106,22 @@ class categoryController extends Controller
         $category->update($request->all());
         return response()->json($category);
 >>>>>>> bb14d22 (cambios requeridos)
+=======
+>>>>>>> fix
     }
     public function destroy($id)
     {
         $category = Category::find($id);
         $category->delete();
 <<<<<<< HEAD
+<<<<<<< HEAD
         return new CategoryResource($category);
 =======
         return response()->json($category);
 >>>>>>> bb14d22 (cambios requeridos)
+=======
+        return new CategoryResource($category);
+>>>>>>> fix
     }
     public function search($name)
     {

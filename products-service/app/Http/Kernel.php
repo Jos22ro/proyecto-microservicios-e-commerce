@@ -62,9 +62,13 @@ class Kernel extends HttpKernel
 
         // JWT custom middleware
 <<<<<<< HEAD
+<<<<<<< HEAD
         'jwt' => JwtMiddleware::class,
 =======
         'jwt' => \App\Http\Middleware\JwtMiddleware::class,
 >>>>>>> bb14d22 (cambios requeridos)
+=======
+        'jwt' => JwtMiddleware::class,
+>>>>>>> fix
     ];
 }

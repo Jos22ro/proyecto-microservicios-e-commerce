@@ -17,7 +17,8 @@
     "axios": "^1.13.2",
     "pinia": "^3.0.4",
     "vue": "^3.5.22",
-    "vue-router": "^4.6.3"
+    "vue-router": "^4.6.3",
+    "vue-toastification": "^2.0.0-rc.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
