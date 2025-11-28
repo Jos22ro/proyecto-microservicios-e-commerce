@@ -61,6 +61,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
 
         // JWT custom middleware
-        'jwt' => \App\Http\Middleware\JwtMiddleware::class,
+        'jwt' => JwtMiddleware::class,
     ];
 }
