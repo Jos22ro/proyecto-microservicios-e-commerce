@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # 1. SERVICIO DE FASTAPI
+  web:
+    build: . 
+    container_name: fastapi_web
+    
+    # Mapeo del puerto de FastAPI (8000) a tu máquina local
+    ports:
+      - "8080:8080" 
+      
+    # Montar el volumen para desarrollo
+    volumes:
+      - ./app:/code/app
+      
+    # Asegurarse de que la base de datos esté lista antes de iniciar FastAPI
+    depends_on:
+      - db 
+      
+    # Variables de entorno que FastAPI usará para conectarse a la DB
+    environment:
+      # CRUCIAL: Usar el nombre del servicio de Docker (db) como host
+      DB_HOST: db 
+      DB_PORT: 5433
+      DB_NAME: my_fastapi_db # Ajusta a tu nombre de DB
+      DB_USER: fastapi_user
+      DB_PASSWORD: fastapi_password # ¡AJUSTA ESTA CONTRASEÑA!
+
+  # 2. SERVICIO DE POSTGRESQL
+  db:
+    image: postgres:15-alpine # Imagen oficial de PostgreSQL
+    container_name: fastapi_db
+    
+    # Mapear el puerto para poder acceder con un cliente (Apidog/DBeaver)
+    ports:
+      - "5433:5433" 
+      
+    # Variables de entorno para configurar la instancia de PostgreSQL
+    environment:
+      POSTGRES_DB: my_fastapi_db # Debe coincidir con DB_NAME de FastAPI
+      POSTGRES_USER: fastapi_user # Debe coincidir con DB_USER de FastAPI
+      POSTGRES_PASSWORD: fastapi_password # Debe coincidir con DB_PASSWORD de FastAPI
+      
+    # Almacenamiento persistente para no perder los datos al apagar el contenedor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+# Definición del volumen para la persistencia de datos
+volumes:
+  postgres_data:
