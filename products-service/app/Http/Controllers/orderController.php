@@ -23,13 +23,13 @@ class orderController extends Controller
 
     public function show($id)
     {
-        $order = Order::find($id);
+        $order = Order::with(['items'])->find($id);
         if (!$order) {
             return response()->json([
                 'message' => 'Order not found'
             ], 404);
         }
-        return response()->json($order);
+        return new OrderResource($order);
     }
 
     public function store(Request $request)
@@ -50,7 +50,9 @@ class orderController extends Controller
         }
 
         $order = Order::create($request->all());
-        return response()->json($order, 201);
+        return (new OrderResource($order->load('items')))
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(Request $request, $id)
@@ -76,7 +78,7 @@ class orderController extends Controller
         }
 
         $order->update($request->all());
-        return response()->json($order);
+        return new OrderResource($order->load('items'));
     }
 
     public function destroy($id)

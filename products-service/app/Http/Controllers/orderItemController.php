@@ -32,7 +32,7 @@ class orderItemController extends Controller
                 'message' => 'Order item not found'
             ], 404);
         }
-        return response()->json($orderItem);
+        return new OrderItemResource($orderItem->load('product'));
     }
 
     public function store(Request $request)
@@ -69,11 +69,13 @@ class orderItemController extends Controller
 
         // Create the order item
         $orderItem = OrderItem::create($request->all());
-        
+
         // Update the order total amount
         $this->updateOrderTotal($orderItem->order_id);
-        
-        return response()->json($orderItem, 201);
+
+        return (new OrderItemResource($orderItem->load('product')))
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(Request $request, $id)
@@ -98,11 +100,11 @@ class orderItemController extends Controller
         }
 
         $orderItem->update($request->all());
-        
+
         // Update the order total amount
         $this->updateOrderTotal($orderItem->order_id);
-        
-        return response()->json($orderItem);
+
+        return new OrderItemResource($orderItem->load('product'));
     }
 
     public function destroy($id)
@@ -116,10 +118,10 @@ class orderItemController extends Controller
 
         $orderId = $orderItem->order_id;
         $orderItem->delete();
-        
+
         // Update the order total amount
         $this->updateOrderTotal($orderId);
-        
+
         return response()->json([
             'message' => 'Order item deleted successfully'
         ]);

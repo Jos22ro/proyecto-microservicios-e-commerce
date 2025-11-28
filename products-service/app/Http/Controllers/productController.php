@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\ProductResource;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 
 class productController extends Controller
 {
@@ -33,62 +35,24 @@ class productController extends Controller
         return new ProductResource($product);
     }
 
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'brand' => 'required',
-            'description' => 'required',
-            'price' => 'required|numeric|min:0',
-            'sku' => 'required|unique:products,sku',
-            'category_id' => 'required|exists:categories,id',
-        ]);
-        
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-        $product = Product::create($request->all());
-        if (!$product) {
-            return response()->json([
-                'message' => 'Product not created'
-            ], 400);
-        }
-        return response()->json($product);
+        $product = Product::create($request->validated());
+        return (new ProductResource($product->load('category')))
+            ->response()
+            ->setStatusCode(201);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateProductRequest $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'brand' => 'required',
-            'description' => 'required',
-            'price' => 'required|numeric|min:0',
-            'sku' => 'required',
-            'category_id' => 'required|exists:categories,id',
-        ]);
-        
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
         $product = Product::find($id);
         if (!$product) {
             return response()->json([
                 'message' => 'Product not found'
             ], 404);
         }
-        $product->update($request->all());
-        if (!$product) {
-            return response()->json([
-                'message' => 'Product not actualizado'
-            ], 400);
-        }
-        return response()->json($product);
+        $product->update($request->validated());
+        return new ProductResource($product->load('category'));
     }
 
     public function destroy($id)
@@ -100,11 +64,6 @@ class productController extends Controller
             ], 404);
         }
         $product->delete();
-        if (!$product) {
-            return response()->json([
-                'message' => 'Product not eliminado'
-            ], 400);
-        }
-        return response()->json($product);
+        return new ProductResource($product);
     }
 }
