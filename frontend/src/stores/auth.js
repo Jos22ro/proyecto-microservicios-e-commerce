@@ -1,43 +1,177 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import authService from '@/api/authService'
-import router from '@/router'
+import axios from 'axios'
 
-export const useAuthStore = defineStore('auth', () => {
-  const token = ref(localStorage.getItem('token') || null)
-  const user = ref(JSON.parse(localStorage.getItem('user')) || null)
+const API_BASE_URL = import.meta.env.VITE_AUTH_SERVICE_URL || 'http://localhost:8000'
 
-  // --- LOGIN (Ya lo tenías) ---
-  const login = async (credentials) => {
-    const response = await authService.login(credentials)
-    _setSession(response.data)
-    router.push('/productos')
+// Helper functions for cookies
+const setCookie = (name, value, days) => {
+  let expires = ""
+  if (days) {
+    const date = new Date()
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000))
+    expires = "; expires=" + date.toUTCString()
   }
+  // Añadir SameSite=None y Secure para CORS cross-origin
+  document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=None; Secure"
+}
 
-  // --- REGISTRO (Nuevo) ---
-  const register = async (userData) => {
-    // Asumimos que el backend devuelve lo mismo que el login (token + user)
-    // Si tu backend solo devuelve "ok" y pide loguearse, cambia esto.
-    const response = await authService.register(userData)
-    _setSession(response.data)
-    router.push('/productos') // Redirigir al dashboard tras registro exitoso
+const getCookie = (name) => {
+  const nameEQ = name + "="
+  const ca = document.cookie.split(';')
+  for(let i = 0; i < ca.length; i++) {
+    let c = ca[i]
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length)
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
   }
+  return null
+}
 
-  const logout = () => {
-    token.value = null
-    user.value = null
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    router.push('/login')
+const deleteCookie = (name) => {
+  document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+}
+
+export const useAuthStore = defineStore('auth', {
+  state: () => ({
+    user: JSON.parse(localStorage.getItem('user')) || null,
+    token: localStorage.getItem('token') || getCookie('access_token') || null,
+    isLoading: false,
+    error: null
+  }),
+
+  getters: {
+    isAuthenticated: (state) => !!state.token && !!state.user,
+    isAdmin: (state) => state.user?.role === 'admin'
+  },
+
+  actions: {
+    async register(userData) {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.post(`${API_BASE_URL}/auth/register`, userData)
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error en el registro'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async verifyCode(username, code) {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.post(`${API_BASE_URL}/auth/verify-code`, {
+          username,
+          code
+        }, {
+          withCredentials: true // Importante para CORS con cookies
+        })
+        
+        this.token = response.data.access_token
+        this.user = response.data.user
+        
+        // Guardar en localStorage
+        localStorage.setItem('token', this.token)
+        localStorage.setItem('user', JSON.stringify(this.user))
+        
+        // Guardar token en cookie para que el backend lo lea
+        setCookie('access_token', this.token, 1) // 1 día
+        
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error en la verificación'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async login(email, password) {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+          email,
+          password
+        }, {
+          withCredentials: true // Importante para CORS con cookies
+        })
+        
+        this.token = response.data.access_token
+        this.user = response.data.user
+        
+        // Guardar en localStorage
+        localStorage.setItem('token', this.token)
+        localStorage.setItem('user', JSON.stringify(this.user))
+        
+        // Guardar token en cookie para que el backend lo lea
+        setCookie('access_token', this.token, 1) // 1 día
+        
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error en el login'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async resendCode(email) {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.post(`${API_BASE_URL}/auth/resend-code`, {
+          email
+        })
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error al reenviar código'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    logout() {
+      this.user = null
+      this.token = null
+      this.error = null
+      
+      // Limpiar localStorage
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      
+      // Limpiar cookies
+      deleteCookie('access_token')
+      
+      // Redirigir a login
+      window.location.href = '/login'
+    },
+
+    async refreshUserInfo() {
+      if (!this.token) return
+      
+      try {
+        // Enviar token en header como fallback, ya que las cookies no cruzan orígenes fácilmente
+        const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${this.token}`
+          },
+          withCredentials: true // Importante para CORS con cookies
+        })
+        
+        this.user = response.data
+        localStorage.setItem('user', JSON.stringify(this.user))
+      } catch (error) {
+        // Si hay error al refrescar, hacer logout
+        this.logout()
+      }
+    }
   }
-
-  // Helper privado para guardar sesión
-  const _setSession = (data) => {
-    token.value = data.token
-    user.value = data.user
-    localStorage.setItem('token', token.value)
-    localStorage.setItem('user', JSON.stringify(user.value))
-  }
-
-  return { token, user, login, register, logout }
 })

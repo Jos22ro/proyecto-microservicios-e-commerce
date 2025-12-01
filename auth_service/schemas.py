@@ -87,3 +87,15 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     user_id: int
     role: str
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserRead
+
+class VerificationRequest(BaseModel):
+    username: str
+
+class VerificationCode(BaseModel):
+    username: str
+    code: str

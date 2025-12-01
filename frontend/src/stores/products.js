@@ -1,110 +1,199 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { productService } from '@/api/productService'
+import axios from 'axios'
+import { useAuthStore } from './auth'
 
-export const useProductsStore = defineStore('products', () => {
-  const products = ref([])
-  const loading = ref(false)
-  const error = ref(null)
-  const currentProduct = ref(null)
+const API_BASE_URL = import.meta.env.VITE_PRODUCTS_SERVICE_URL || 'http://localhost:8001'
 
-  // Getters
-  const totalProducts = computed(() => products.value.length)
-  const lowStockProducts = computed(() =>
-    products.value.filter((product) => product.stock < product.minStock),
-  )
+export const useProductsStore = defineStore('products', {
+  state: () => ({
+    products: [],
+    isLoading: false,
+    error: null,
+    categories: [],
+    total: 0,
+    page: 1,
+    per_page: 10,
+    pages: 0
+  }),
 
-  // Actions
-  const fetchProducts = async () => {
-    loading.value = true
-    error.value = null
-    try {
-      const response = await productService.getAll()
-      products.value = response.data
-    } catch (err) {
-      error.value = err.response?.data?.message || 'Error al cargar los productos'
-      throw err
-    } finally {
-      loading.value = false
+  getters: {
+    filteredProducts: (state) => {
+      if (state.products.length === 0) return []
+      return state.products
     }
-  }
+  },
 
-  const fetchProductById = async (id) => {
-    loading.value = true
-    try {
-      const response = await productService.getById(id)
-      currentProduct.value = response.data
-      return response.data
-    } catch (err) {
-      error.value = err.response?.data?.message || 'Error al cargar el producto'
-      throw err
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const createProduct = async (productData) => {
-    try {
-      const response = await productService.create(productData)
-      products.value.push(response.data)
-      return response.data
-    } catch (err) {
-      error.value = err.response?.data?.message || 'Error al crear el producto'
-      throw err
-    }
-  }
-
-  const updateProduct = async (id, productData) => {
-    try {
-      const response = await productService.update(id, productData)
-      const index = products.value.findIndex((p) => p.id === id)
-      if (index !== -1) {
-        products.value[index] = response.data
+  actions: {
+    getAuthHeaders() {
+      const authStore = useAuthStore()
+      return {
+        headers: {
+          Authorization: `Bearer ${authStore.token}`
+        }
       }
-      return response.data
-    } catch (err) {
-      error.value = err.response?.data?.message || 'Error al actualizar el producto'
-      throw err
+    },
+
+    async fetchProducts(params = {}) {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/products/products`, {
+          params,
+          ...this.getAuthHeaders()
+        })
+        
+        this.products = response.data.products
+        this.total = response.data.total
+        this.page = response.data.page
+        this.per_page = response.data.per_page
+        this.pages = response.data.pages
+        
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error al cargar productos'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async fetchProduct(id) {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/products/products/${id}`, {
+          ...this.getAuthHeaders()
+        })
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error al cargar producto'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async createProduct(productData) {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.post(`${API_BASE_URL}/api/products/products`, productData, {
+          ...this.getAuthHeaders()
+        })
+        
+        // Recargar lista de productos
+        await this.fetchProducts()
+        
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error al crear producto'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async updateProduct(id, productData) {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.put(`${API_BASE_URL}/api/products/products/${id}`, productData, {
+          ...this.getAuthHeaders()
+        })
+        
+        // Recargar lista de productos
+        await this.fetchProducts()
+        
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error al actualizar producto'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async deleteProduct(id) {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.delete(`${API_BASE_URL}/api/products/products/${id}`, {
+          ...this.getAuthHeaders()
+        })
+        
+        // Recargar lista de productos
+        await this.fetchProducts()
+        
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error al eliminar producto'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async toggleProductStatus(id) {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.patch(`${API_BASE_URL}/api/products/products/${id}/toggle`, {}, {
+          ...this.getAuthHeaders()
+        })
+        
+        // Recargar lista de productos
+        await this.fetchProducts()
+        
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error al cambiar estado del producto'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async fetchCategories() {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/products/categories`, {
+          ...this.getAuthHeaders()
+        })
+        
+        this.categories = response.data
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error al cargar categorías'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async fetchStats() {
+      this.isLoading = true
+      this.error = null
+      
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/products/admin/products/stats`, {
+          ...this.getAuthHeaders()
+        })
+        
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Error al cargar estadísticas'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
     }
-  }
-
-  const deleteProduct = async (id) => {
-    try {
-      await productService.delete(id)
-      products.value = products.value.filter((p) => p.id !== id)
-    } catch (err) {
-      error.value = err.response?.data?.message || 'Error al eliminar el producto'
-      throw err
-    }
-  }
-
-  const searchProducts = (query) => {
-    if (!query) return products.value
-    return products.value.filter(
-      (product) =>
-        product.name.toLowerCase().includes(query.toLowerCase()) ||
-        product.description.toLowerCase().includes(query.toLowerCase()) ||
-        product.category.toLowerCase().includes(query.toLowerCase()),
-    )
-  }
-
-  return {
-    // State
-    products,
-    loading,
-    error,
-    currentProduct,
-
-    // Getters
-    totalProducts,
-    lowStockProducts,
-
-    // Actions
-    fetchProducts,
-    fetchProductById,
-    createProduct,
-    updateProduct,
-    deleteProduct,
-    searchProducts,
   }
 })
