@@ -2,7 +2,7 @@ from sqlalchemy import Boolean, Column, Integer, String, Text, ForeignKey, DateT
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-from .database import Base
+from database import Base
 
 class Role(Base):
     __tablename__ = "roles"

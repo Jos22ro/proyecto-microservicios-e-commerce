@@ -1,0 +1,162 @@
+version: '3.8'
+
+services:
+  # Frontend - Vue.js
+  frontend:
+    container_name: microservices-frontend
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: [ "npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000" ]
+    networks:
+      - microservices_network
+    depends_on:
+      - auth_service
+      - inventory_service
+
+  # Auth Service - Node.js + PostgreSQL
+  auth_service:
+    container_name: auth_service
+    build: ./auth_service
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./auth_service:/app
+    depends_on:
+      auth_db:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - microservices_network
+    environment:
+      - DB_HOST=auth_db
+      - DB_PORT=5432
+      - DB_USER=authuser
+      - DB_PASSWORD=authpass
+      - DB_NAME=authdb
+
+  auth_db:
+    image: postgres:15-alpine
+    container_name: auth_db
+    environment:
+      POSTGRES_USER: authuser
+      POSTGRES_PASSWORD: authpass
+      POSTGRES_DB: authdb
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
+    networks:
+      - microservices_network
+
+  # Inventory Service - Rust + PostgreSQL
+  inventory_service:
+    container_name: inventory_service
+    build: ./InventoryService
+    ports:
+      - "8002:3000"
+    environment:
+      - DATABASE_URL=postgres://inventoryuser:inventorypass@inventory_db:5432/inventorydb
+      - RUST_LOG=debug
+    depends_on:
+      inventory_db:
+        condition: service_healthy
+    networks:
+      - microservices_network
+
+  inventory_db:
+    image: postgres:16
+    container_name: inventory_db
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_USER: inventoryuser
+      POSTGRES_PASSWORD: inventorypass
+      POSTGRES_DB: inventorydb
+    volumes:
+      - inventory_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U inventoryuser -d inventorydb" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices_network
+
+  # Products Service - PHP Laravel + PostgreSQL
+  products_service:
+    container_name: products_service
+    build: ./products-service
+    ports:
+      - "8003:8003"
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: products_db
+      DB_PORT: 5432
+      DB_DATABASE: productsdb
+      DB_USERNAME: productsuser
+      DB_PASSWORD: productspass
+    volumes:
+      - ./products-service:/var/www/html
+    networks:
+      - microservices_network
+    depends_on:
+      products_db:
+        condition: service_healthy
+
+  products_db:
+    image: 'postgres:18-alpine'
+    container_name: products_db
+    ports:
+      - "5435:5432"
+    environment:
+      PGPASSWORD: 'productspass'
+      POSTGRES_DB: 'productsdb'
+      POSTGRES_USER: 'productsuser'
+      POSTGRES_PASSWORD: 'productspass'
+    volumes:
+      - products_postgres_data:/var/lib/postgresql/data
+    networks:
+      - microservices_network
+    healthcheck:
+      test:
+        - CMD
+        - pg_isready
+        - '-q'
+        - '-d'
+        - 'productsdb'
+        - '-U'
+        - 'productsuser'
+      retries: 3
+      timeout: 5s
+
+  # PgAdmin - Administración de bases de datos
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - auth_db
+      - inventory_db
+      - products_db
+    networks:
+      - microservices_network
+
+networks:
+  microservices_network:
+    driver: bridge
+
+volumes:
+  auth_postgres_data:
+    driver: local
+  inventory_postgres_data:
+    driver: local
+  products_postgres_data:
+    driver: local

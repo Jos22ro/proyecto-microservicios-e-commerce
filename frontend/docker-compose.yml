@@ -1,23 +1,14 @@
-version: '3.8'
+version: "3.9"
 
 services:
   frontend:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    container_name: ecommerce-frontend
-    restart: unless-stopped
+    container_name: microservices-frontend
+    build: .
     ports:
-      - "8080:80"
+      - "3000:3000"
+    env_file:
+      - .env
     volumes:
-      - ./src:/app/src
+      - .:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:3000/api}
-    networks:
-      - ecommerce-network
-
-networks:
-  ecommerce-network:
-    driver: bridge
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]

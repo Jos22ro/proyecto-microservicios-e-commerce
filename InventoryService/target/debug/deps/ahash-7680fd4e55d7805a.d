@@ -1,0 +1,12 @@
+/home/jose/Documentos/pendiente/InventoryService/target/debug/deps/ahash-7680fd4e55d7805a.d: /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/lib.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/convert.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/fallback_hash.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/operations.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/random_state.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/specialize.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/hash_map.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/hash_set.rs
+
+/home/jose/Documentos/pendiente/InventoryService/target/debug/deps/libahash-7680fd4e55d7805a.rmeta: /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/lib.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/convert.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/fallback_hash.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/operations.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/random_state.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/specialize.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/hash_map.rs /home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/hash_set.rs
+
+/home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/lib.rs:
+/home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/convert.rs:
+/home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/fallback_hash.rs:
+/home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/operations.rs:
+/home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/random_state.rs:
+/home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/specialize.rs:
+/home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/hash_map.rs:
+/home/jose/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ahash-0.8.12/src/hash_set.rs:

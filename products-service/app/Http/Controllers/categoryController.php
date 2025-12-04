@@ -5,18 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Category;
 use Illuminate\Support\Facades\Validator;
-<<<<<<< HEAD
-<<<<<<< HEAD
 use App\Http\Resources\CategoryResource;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
-=======
->>>>>>> bb14d22 (cambios requeridos)
-=======
-use App\Http\Resources\CategoryResource;
-use App\Http\Requests\StoreCategoryRequest;
-use App\Http\Requests\UpdateCategoryRequest;
->>>>>>> fix
 class categoryController extends Controller
 {
     public function index()
@@ -27,101 +18,42 @@ class categoryController extends Controller
                 'message' => 'No categories found'
             ], 404);
         }
-<<<<<<< HEAD
-<<<<<<< HEAD
         return CategoryResource::collection($categories);
-=======
-        return response()->json($categories);
->>>>>>> bb14d22 (cambios requeridos)
-=======
-        return CategoryResource::collection($categories);
->>>>>>> fix
     }
     public function show($id)
     {
         $category = Category::find($id);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> fix
         if (!$category) {
             return response()->json(['message' => 'Category not found'], 404);
         }
         return new CategoryResource($category);
     }
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
-        // Use FormRequest for validation
-        $data = $request->all();
-        $category = Category::create($data);
+        $category = Category::create($request->validated());
         return (new CategoryResource($category))
             ->response()
             ->setStatusCode(201);
-<<<<<<< HEAD
-=======
-        return response()->json($category);
     }
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'string|max:255',
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-        $category = Category::create($request->all());
-        return response()->json($category);
->>>>>>> bb14d22 (cambios requeridos)
-=======
->>>>>>> fix
-    }
-    public function update(Request $request, $id)
+
+    public function update(UpdateCategoryRequest $request, $id)
     {
         $category = Category::find($id);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> fix
         if (!$category) {
             return response()->json(['message' => 'Category not found'], 404);
         }
-        $category->update($request->all());
+        $category->update($request->validated());
         return new CategoryResource($category);
-<<<<<<< HEAD
-=======
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'string|max:255',
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-        $category->update($request->all());
-        return response()->json($category);
->>>>>>> bb14d22 (cambios requeridos)
-=======
->>>>>>> fix
     }
+
     public function destroy($id)
     {
         $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['message' => 'Category not found'], 404);
+        }
         $category->delete();
-<<<<<<< HEAD
-<<<<<<< HEAD
-        return new CategoryResource($category);
-=======
-        return response()->json($category);
->>>>>>> bb14d22 (cambios requeridos)
-=======
-        return new CategoryResource($category);
->>>>>>> fix
+        return response()->noContent();
     }
     public function search($name)
     {
@@ -131,7 +63,10 @@ class categoryController extends Controller
     public function delete($id)
     {
         $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['message' => 'Category not found'], 404);
+        }
         $category->delete();
-        return response()->json($category);
+        return response()->noContent();
     }
 }
