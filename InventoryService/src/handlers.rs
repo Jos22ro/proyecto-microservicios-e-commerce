@@ -4,7 +4,7 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use sqlx::{PgPool};
+
 // ⚠️ Nota: Se ha eliminado `use serde_json::json;` si no se usa.
 
 use crate::{
@@ -57,7 +57,7 @@ pub async fn create_order(
             tx.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             Ok((StatusCode::CREATED, Json(order)))
         }
-        Err(e) => {
+        Err(_e) => {
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -95,7 +95,7 @@ pub async fn get_orders_by_user_id_handler(
 // ----------------------------------------------------------------------
 
 pub async fn add_stock_handler(
-    State(pool): State<PgPool>,
+    State(pool): State<Db>,
     Json(create_stock): Json<CreateStock>,
 ) -> Result<Json<Stock>, StatusCode> {
     // ✅ Usa el tipo `CreateStock` importado de `models`
@@ -109,7 +109,7 @@ pub async fn add_stock_handler(
 }
 
 pub async fn update_stock_handler(
-    State(pool): State<PgPool>,
+    State(pool): State<Db>,
     Path(product_id): Path<i32>,
     Json(update_stock): Json<UpdateStock>,
 ) -> Result<Json<Stock>, StatusCode> {
@@ -125,7 +125,7 @@ pub async fn update_stock_handler(
 }
 
 pub async fn delete_stock_handler(
-    State(pool): State<PgPool>,
+    State(pool): State<Db>,
     Path(product_id): Path<i32>,
 ) -> Result<StatusCode, StatusCode> {
     match StockManager::delete_stock(&pool, product_id).await {
@@ -139,7 +139,7 @@ pub async fn delete_stock_handler(
 }
 
 pub async fn get_stock_handler(
-    State(pool): State<PgPool>,
+    State(pool): State<Db>,
     product_id: Option<Path<i32>>,
 ) -> Result<Json<Vec<Stock>>, StatusCode> {
     let id = product_id.map(|Path(id)| id);
@@ -147,6 +147,31 @@ pub async fn get_stock_handler(
         Ok(stocks) => Ok(Json(stocks)),
         Err(e) => {
             eprintln!("Error getting stock: {:?}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+pub async fn get_all_stock(
+    State(pool): State<Db>,
+) -> Result<Json<Vec<Stock>>, StatusCode> {
+    match StockManager::get_stock(&pool, None).await {
+        Ok(stocks) => Ok(Json(stocks)),
+        Err(e) => {
+            eprintln!("Error getting stock: {:?}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+pub async fn get_stock_by_id(
+    State(pool): State<Db>,
+    Path(product_id): Path<i32>,
+) -> Result<Json<Vec<Stock>>, StatusCode> {
+    match StockManager::get_stock(&pool, Some(product_id)).await {
+        Ok(stocks) => Ok(Json(stocks)),
+        Err(e) => {
+            eprintln!("Error getting stock by ID: {:?}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }

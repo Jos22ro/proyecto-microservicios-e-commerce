@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  payments_service:
+    build: .
+    container_name: payments_service
+    ports:
+      - "8003:3000"
+    environment:
+      # Service Configuration
+      - NODE_ENV=production
+      - PORT=3000
+      
+      # Database Configuration
+      - DATABASE_HOST=payments_db
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=payments_db
+      - DATABASE_USER=payments_user
+      - DATABASE_PASSWORD=payments_password
+      - DATABASE_URL=postgresql://payments_user:payments_password@payments_db:5432/payments_db
+      
+      # JWT Configuration (Must match auth service)
+      - JWT_SECRET=e76bf53e914cfbad8ab502a6e88c2a37c6186eaa8121b8cc74485f8890f5b400
+      - JWT_ALGORITHM=HS256
+      
+      # External Services
+      - ORDERS_SERVICE_URL=http://orders-service:8080
+      - AUTH_SERVICE_URL=http://auth_service:8001
+      
+      # Service Timeouts
+      - ORDERS_SERVICE_TIMEOUT=10000
+      - AUTH_SERVICE_TIMEOUT=10000
+      
+      # Payment Configuration
+      - PAYMENT_APPROVAL_RATE=90
+      - PAYMENT_PROCESSING_DELAY=2000
+      
+      # Logging
+      - LOG_LEVEL=info
+    depends_on:
+      payments_db:
+        condition: service_healthy
+    networks:
+      - payments_network
+      - microservices_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  payments_db:
+    image: postgres:15-alpine
+    container_name: payments_db
+    environment:
+      POSTGRES_DB: payments_db
+      POSTGRES_USER: payments_user
+      POSTGRES_PASSWORD: payments_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5435:5432"
+    volumes:
+      - payments_postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - payments_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payments_user -d payments_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  payments_postgres_data:
+    driver: local
+
+networks:
+  payments_network:
+    driver: bridge
+    internal: true
+  microservices_network:
+    external: true
+    name: microservices_default

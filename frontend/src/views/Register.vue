@@ -141,7 +141,7 @@ const handleRegister = async () => {
   
   try {
     await authStore.register(form)
-    success.value = 'Registro exitoso. Revisa tu email para el código de verificación.'
+    success.value = 'Registro exitoso. Hemos enviado un enlace de verificación a tu correo electrónico.'
     setTimeout(() => {
       router.push('/verify')
     }, 2000)

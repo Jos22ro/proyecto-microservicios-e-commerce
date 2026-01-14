@@ -6,6 +6,8 @@ mod order_logic;
 mod stock_logic;
 mod seed; // New module declaration
 
+
+use tower_http::cors::{CorsLayer, Any};
 use db::Db;
 use routes::create_router;
 use std::net::SocketAddr;
@@ -27,12 +29,17 @@ async fn main() {
     // Call the seeding function
     seed::seed_db(&db).await;
 
-    let app = create_router(db);
+    // Configurar CORS
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
+    let app = create_router(db)
+        .layer(cors);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }

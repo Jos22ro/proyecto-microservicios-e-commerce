@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
 import os
 import jwt
+import os
+import jwt
 
-from fastapi import APIRouter, Depends, HTTPException, status, Response, BackgroundTasks, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request, BackgroundTasks
 from fastapi.responses import HTMLResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -16,53 +18,74 @@ from config import settings
 # Asegúrate de que el archivo mailer.py esté en la misma carpeta
 from mailer import send_verification_email
 
+# --- IMPORTANTE: Importamos tu lógica de correo ---
+# Asegúrate de que el archivo mailer.py esté en la misma carpeta
+from mailer import send_verification_email
+
 router = APIRouter()
 
 @router.post("/register", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
-def register(
-    user_in: schemas.UserCreate, 
-    background_tasks: BackgroundTasks,  # <--- Nuevo parámetro
-    request: Request,                   # <--- Nuevo parámetro para obtener la URL base
+async def register(
+    user_in: schemas.UserCreate,
+    request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
+    # Verificar si el rol 'customer' existe
     role = db.query(models.Role).filter(models.Role.name == "customer").first()
     if not role:
-        raise HTTPException(status_code=500, detail="Default role 'customer' not configured")
+        raise HTTPException(
+            status_code=500,
+            detail="Default role 'customer' not configured"
+        )
 
+    # Crear el usuario
     user = models.User(
         username=user_in.username,
         email=user_in.email,
         phone_number=user_in.phone_number,
         password_hash=get_password_hash(user_in.password),
         role_id=role.id,
-        # OJO: Si quieres que el usuario NO pueda entrar hasta verificar, 
-        # descomenta la siguiente línea (asegúrate que tu modelo lo soporte):
-        # is_active=False 
+        is_active=False  # El usuario debe verificar su correo primero
     )
 
+    # Guardar el usuario en la base de datos
     db.add(user)
     try:
         db.commit()
+        db.refresh(user)
+        # Para desarrollo, usar localhost en lugar de host.docker.internal
+        base_url = "http://localhost:8001"
+
+        # Enviar correo de verificación en segundo plano
+        background_tasks.add_task(
+            send_verification_email,
+            user_email=user.email,
+            base_url=base_url
+        )  
+        
     except IntegrityError as e:
         db.rollback()
-        msg = str(e.orig).lower()
-        if "users_email_key" in msg or "email" in msg:
-            raise HTTPException(status_code=400, detail="Email already registered")
-        if "users_phone_number_key" in msg or "phone" in msg:
-            raise HTTPException(status_code=400, detail="Phone number already registered")
-        if "users_username_key" in msg or "username" in msg:
-            raise HTTPException(status_code=400, detail="Username already registered")
-        raise HTTPException(status_code=400, detail="Could not create user")
-
-    db.refresh(user)
-
-    # --- INTEGRACIÓN DE CORREO ---
-    # Obtenemos la URL actual (ej: http://localhost:8000 o tu dominio real)
-    base_url = str(request.base_url).rstrip('/')
-    
-    # Enviamos el correo en segundo plano (no bloquea la respuesta)
-    background_tasks.add_task(send_verification_email, user.email, base_url)
-    # -----------------------------
+        error_msg = str(e.orig).lower()
+        if "users_email_key" in error_msg or "email" in error_msg:
+            raise HTTPException(
+                status_code=400,
+                detail="Email already registered"
+            )
+        if "users_phone_number_key" in error_msg or "phone" in error_msg:
+            raise HTTPException(
+                status_code=400,
+                detail="Phone number already registered"
+            )
+        if "users_username_key" in error_msg or "username" in error_msg:
+            raise HTTPException(
+                status_code=400,
+                detail="Username already registered"
+            )
+        raise HTTPException(
+            status_code=400,
+            detail="Could not create user"
+        )
 
     return user
 
@@ -137,7 +160,7 @@ def verify_email_token(token: str, db: Session = Depends(get_db)):
     Valida el token recibido por correo y activa al usuario.
     """
     # IMPORTANTE: Debe ser la misma clave que usaste en mailer.py
-    SECRET_KEY_MAILER = os.environ.get('SECRET_KEY') 
+    SECRET_KEY_MAILER = os.environ.get('SECRET_KEY', 'secret_key_por_defecto')
 
     try:
         # Decodificamos el token

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_AUTH_SERVICE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
 // Helper functions for cookies
 const setCookie = (name, value, days) => {
@@ -32,7 +32,13 @@ const deleteCookie = (name) => {
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: JSON.parse(localStorage.getItem('user')) || null,
+    user: (() => {
+      try {
+        return JSON.parse(localStorage.getItem('user')) || null
+      } catch {
+        return null
+      }
+    })(),
     token: localStorage.getItem('token') || getCookie('access_token') || null,
     isLoading: false,
     error: null
@@ -49,7 +55,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       
       try {
-        const response = await axios.post(`${API_BASE_URL}/auth/register`, userData)
+        const response = await axios.post(`/api/auth/register`, userData)
         return response.data
       } catch (error) {
         this.error = error.response?.data?.detail || 'Error en el registro'
@@ -64,7 +70,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       
       try {
-        const response = await axios.post(`${API_BASE_URL}/auth/verify-code`, {
+        const response = await axios.post(`/api/auth/verify-code`, {
           username,
           code
         }, {
@@ -95,7 +101,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       
       try {
-        const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+        const response = await axios.post(`/api/auth/login`, {
           email,
           password
         }, {
@@ -103,7 +109,13 @@ export const useAuthStore = defineStore('auth', {
         })
         
         this.token = response.data.access_token
-        this.user = response.data.user
+        
+        // Obtener datos del usuario después del login
+        const userResponse = await axios.get(`/api/auth/me`, {
+          withCredentials: true
+        })
+        
+        this.user = userResponse.data
         
         // Guardar en localStorage
         localStorage.setItem('token', this.token)
@@ -126,7 +138,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       
       try {
-        const response = await axios.post(`${API_BASE_URL}/auth/resend-code`, {
+        const response = await axios.post(`/api/auth/resend-code`, {
           email
         })
         return response.data
@@ -159,7 +171,7 @@ export const useAuthStore = defineStore('auth', {
       
       try {
         // Enviar token en header como fallback, ya que las cookies no cruzan orígenes fácilmente
-        const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+        const response = await axios.get(`/api/auth/me`, {
           headers: {
             Authorization: `Bearer ${this.token}`
           },

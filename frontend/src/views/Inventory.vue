@@ -125,12 +125,11 @@
             <table class="min-w-full divide-y divide-gray-300">
               <thead class="bg-gray-50">
                 <tr>
-                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">SKU</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">ID</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Producto ID</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Stock Actual</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Stock Reservado</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Stock Mínimo</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Cantidad</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Ubicación</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Última Actualización</th>
                   <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
                     <span class="sr-only">Acciones</span>
                   </th>
@@ -139,28 +138,21 @@
               <tbody class="divide-y divide-gray-200 bg-white">
                 <tr v-for="item in inventoryItems" :key="item.id">
                   <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                    {{ item.sku }}
+                    {{ item.id }}
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     {{ item.product_id }}
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm">
-                    <span
-                      :class="[
-                        item.current_stock <= item.minimum_stock ? 'text-red-600 font-bold' : 'text-gray-900'
-                      ]"
-                    >
-                      {{ item.current_stock }}
+                    <span :class="[item.quantity <= 0 ? 'text-red-600 font-bold' : 'text-gray-900']">
+                      {{ item.quantity }}
                     </span>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                    {{ item.reserved_stock }}
+                    {{ item.warehouse_location || 'N/A' }}
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                    {{ item.minimum_stock }}
-                  </td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                    {{ item.location || 'N/A' }}
+                    {{ item.last_updated ? new Date(item.last_updated).toLocaleString() : 'N/A' }}
                   </td>
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                     <button
@@ -201,58 +193,43 @@
           <form @submit.prevent="handleCreateItem" class="space-y-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label for="product_id" class="block text-sm font-medium text-gray-700">ID Producto *</label>
-                <input
-                  id="product_id"
-                  v-model.number="form.product_id"
-                  type="number"
-                  required
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              
-              <div>
-                <label for="sku" class="block text-sm font-medium text-gray-700">SKU *</label>
-                <input
+                <label for="sku" class="block text-sm font-medium text-gray-700">Producto (SKU) *</label>
+                <select
                   id="sku"
                   v-model="form.sku"
-                  type="text"
                   required
                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
+                >
+                  <option value="">Selecciona un producto</option>
+                  <option 
+                    v-for="product in products" 
+                    :key="product.id" 
+                    :value="product.sku"
+                  >
+                    {{ product.sku }} - {{ product.name }} (Stock: {{ product.current_stock }})
+                  </option>
+                </select>
               </div>
-              
               <div>
-                <label for="current_stock" class="block text-sm font-medium text-gray-700">Stock Inicial *</label>
+                <label for="quantity" class="block text-sm font-medium text-gray-700">Cantidad *</label>
                 <input
-                  id="current_stock"
-                  v-model.number="form.current_stock"
+                  id="quantity"
+                  v-model.number="form.quantity"
                   type="number"
                   min="0"
                   required
                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
               </div>
-              
-              <div>
-                <label for="minimum_stock" class="block text-sm font-medium text-gray-700">Stock Mínimo *</label>
+              <div class="sm:col-span-2">
+                <label for="warehouse_location" class="block text-sm font-medium text-gray-700">Ubicación en Almacén *</label>
                 <input
-                  id="minimum_stock"
-                  v-model.number="form.minimum_stock"
-                  type="number"
-                  min="0"
+                  id="warehouse_location"
+                  v-model="form.warehouse_location"
+                  type="text"
                   required
                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              
-              <div>
-                <label for="location" class="block text-sm font-medium text-gray-700">Ubicación</label>
-                <input
-                  id="location"
-                  v-model="form.location"
-                  type="text"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="Ej: A-12-B-3"
                 />
               </div>
             </div>
@@ -291,16 +268,23 @@
           <form @submit.prevent="handleMovement" class="space-y-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label for="movement_sku" class="block text-sm font-medium text-gray-700">SKU *</label>
-                <input
+                <label for="movement_sku" class="block text-sm font-medium text-gray-700">Producto (SKU) *</label>
+                <select
                   id="movement_sku"
                   v-model="movementForm.sku"
-                  type="text"
                   required
                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
+                >
+                  <option value="">Selecciona un producto</option>
+                  <option 
+                    v-for="product in products" 
+                    :key="product.id" 
+                    :value="product.sku"
+                  >
+                    {{ product.sku }} - {{ product.name }} (Stock: {{ product.current_stock }})
+                  </option>
+                </select>
               </div>
-              
               <div>
                 <label for="movement_type" class="block text-sm font-medium text-gray-700">Tipo de Movimiento *</label>
                 <select
@@ -316,7 +300,6 @@
                   <option value="RELEASE">Liberación (RELEASE)</option>
                 </select>
               </div>
-              
               <div>
                 <label for="quantity" class="block text-sm font-medium text-gray-700">Cantidad *</label>
                 <input
@@ -328,12 +311,20 @@
                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
               </div>
-              
               <div>
                 <label for="reason" class="block text-sm font-medium text-gray-700">Razón</label>
                 <input
                   id="reason"
                   v-model="movementForm.reason"
+                  type="text"
+                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label for="warehouse_location" class="block text-sm font-medium text-gray-700">Ubicación en Almacén</label>
+                <input
+                  id="warehouse_location"
+                  v-model="movementForm.warehouse_location"
                   type="text"
                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
@@ -368,36 +359,41 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useInventoryStore } from '../stores/inventory'
 import { useAuthStore } from '../stores/auth'
+import { useProductsStore } from '../stores/products'
 
 const inventoryStore = useInventoryStore()
 const authStore = useAuthStore()
+const productsStore = useProductsStore()
 
 const inventoryItems = ref([])
 const lowStockAlerts = ref([])
+const products = ref([])
 const stats = ref(null)
 const isLoading = ref(false)
 const error = ref('')
 const showCreateModal = ref(false)
 const showMovementModal = ref(false)
+const selectedProduct = ref(null)
 
 const isAdmin = computed(() => authStore.isAdmin)
 
 const form = reactive({
-  product_id: 0,
   sku: '',
-  current_stock: 0,
-  minimum_stock: 0,
-  location: ''
+  product_id: null,
+  quantity: 0,
+  warehouse_location: ''
 })
 
 const movementForm = reactive({
   sku: '',
-  movement_type: 'IN',
+  product_id: null,
   quantity: 1,
-  reason: ''
+  movement_type: 'IN',
+  reason: '',
+  warehouse_location: ''
 })
 
 const loadInventory = async () => {
@@ -405,7 +401,11 @@ const loadInventory = async () => {
   error.value = ''
   
   try {
-    await inventoryStore.fetchInventory()
+    await Promise.all([
+      inventoryStore.fetchInventory(),
+      loadProducts()
+    ])
+    
     inventoryItems.value = inventoryStore.inventoryItems
     
     await inventoryStore.fetchLowStockAlerts()
@@ -420,52 +420,116 @@ const loadInventory = async () => {
   }
 }
 
+const loadProducts = async () => {
+  try {
+    await productsStore.fetchProducts({ lowStock: true })
+    products.value = productsStore.products.map(p => ({
+      id: p.id,
+      sku: p.sku,
+      name: p.name,
+      current_stock: p.stock_quantity || 0
+    }))
+  } catch (err) {
+    console.error('Error loading products:', err)
+  }
+}
+
+// Watch for SKU changes to update product_id
+watch(() => form.sku, (newSku) => {
+  if (newSku) {
+    const product = products.value.find(p => p.sku === newSku)
+    form.product_id = product ? product.id : null
+  } else {
+    form.product_id = null
+  }
+})
+
+// Watch for SKU changes in movement form
+watch(() => movementForm.sku, (newSku) => {
+  if (newSku) {
+    const product = products.value.find(p => p.sku === newSku)
+    movementForm.product_id = product ? product.id : null
+  } else {
+    movementForm.product_id = null
+  }
+})
+
 const closeCreateModal = () => {
   showCreateModal.value = false
-  form.product_id = 0
   form.sku = ''
-  form.current_stock = 0
-  form.minimum_stock = 0
-  form.location = ''
+  form.product_id = null
+  form.quantity = 0
+  form.warehouse_location = ''
   error.value = ''
 }
 
 const closeMovementModal = () => {
   showMovementModal.value = false
   movementForm.sku = ''
-  movementForm.movement_type = 'IN'
+  movementForm.product_id = null
   movementForm.quantity = 1
+  movementForm.movement_type = 'IN'
   movementForm.reason = ''
+  movementForm.warehouse_location = ''
   error.value = ''
 }
 
-const handleCreateItem = async () => {
-  isLoading.value = true
-  error.value = ''
-  
+const handleCreateItem = async function handleCreateItem() {
+  if (!form.sku || !form.product_id) {
+    error.value = 'Por favor selecciona un producto válido'
+    return
+  }
+
   try {
-    await inventoryStore.createInventoryItem(form)
-    closeCreateModal()
+    isLoading.value = true
+    await inventoryStore.createInventoryItem({
+      product_id: form.product_id,
+      quantity: form.quantity,
+      warehouse_location: form.warehouse_location
+    })
     await loadInventory()
+    closeCreateModal()
   } catch (err) {
-    error.value = inventoryStore.error || 'Error al crear ítem'
+    error.value = inventoryStore.error || 'Error al crear el ítem de inventario'
   } finally {
     isLoading.value = false
   }
 }
 
 const handleMovement = async () => {
+  if (!movementForm.sku || !movementForm.product_id) {
+    error.value = 'Por favor selecciona un producto válido'
+    return
+  }
+
   isLoading.value = true
   error.value = ''
   
   try {
-    await inventoryStore.processStockMovement(movementForm)
+    await inventoryStore.processStockMovement({
+      ...movementForm,
+      product_id: movementForm.product_id
+    })
     closeMovementModal()
     await loadInventory()
   } catch (err) {
     error.value = inventoryStore.error || 'Error al procesar movimiento'
   } finally {
     isLoading.value = false
+  }
+}
+
+async function adjustStock(item) {
+  const newQuantity = prompt(`Ajustar stock para Producto ID ${item.product_id} (actual: ${item.quantity}):`, item.quantity)
+  
+  if (newQuantity === null) return
+  
+  try {
+    await inventoryStore.updateInventoryItem(item.id, {
+      quantity: parseInt(newQuantity, 10)
+    })
+  } catch (error) {
+    console.error('Error adjusting stock:', error)
   }
 }
 
@@ -476,28 +540,6 @@ const viewMovements = async (item) => {
     alert(`Historial de movimientos para SKU ${item.sku} cargado. Total: ${inventoryStore.movementHistory.length} movimientos`)
   } catch (err) {
     error.value = inventoryStore.error || 'Error al cargar historial'
-  }
-}
-
-const adjustStock = async (item) => {
-  const newStock = prompt(`Ajustar stock para SKU ${item.sku}. Stock actual: ${item.current_stock}`)
-  if (newStock === null) return
-  
-  const stockValue = parseInt(newStock)
-  if (isNaN(stockValue) || stockValue < 0) {
-    alert('Por favor ingresa un número válido')
-    return
-  }
-  
-  try {
-    await inventoryStore.adjustStock({
-      sku: item.sku,
-      new_stock: stockValue,
-      reason: 'Ajuste manual'
-    })
-    await loadInventory()
-  } catch (err) {
-    error.value = inventoryStore.error || 'Error al ajustar stock'
   }
 }
 

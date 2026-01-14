@@ -24,37 +24,36 @@ export const useInventoryStore = defineStore('inventory', {
       }
     },
 
-    async fetchInventory(params = {}) {
+    async fetchInventory() {
       this.isLoading = true
       this.error = null
       
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/inventory/inventory`, {
-          params,
+        const response = await axios.get(`${API_BASE_URL}/stock`, {
           ...this.getAuthHeaders()
         })
         
         this.inventoryItems = response.data
         return response.data
       } catch (error) {
-        this.error = error.response?.data?.detail || 'Error al cargar inventario'
+        this.error = error.response?.data?.detail || 'Error al cargar el inventario'
         throw error
       } finally {
         this.isLoading = false
       }
     },
 
-    async fetchInventoryItem(sku) {
+    async fetchInventoryItem(productId) {
       this.isLoading = true
       this.error = null
       
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/inventory/inventory/${sku}`, {
+        const response = await axios.get(`${API_BASE_URL}/stock/${productId}`, {
           ...this.getAuthHeaders()
         })
         return response.data
       } catch (error) {
-        this.error = error.response?.data?.detail || 'Error al cargar ítem de inventario'
+        this.error = error.response?.data?.detail || 'Error al cargar el ítem de inventario'
         throw error
       } finally {
         this.isLoading = false
@@ -66,7 +65,7 @@ export const useInventoryStore = defineStore('inventory', {
       this.error = null
       
       try {
-        const response = await axios.post(`${API_BASE_URL}/api/inventory/inventory`, itemData, {
+        const response = await axios.post(`${API_BASE_URL}/stock`, itemData, {
           ...this.getAuthHeaders()
         })
         
@@ -75,19 +74,19 @@ export const useInventoryStore = defineStore('inventory', {
         
         return response.data
       } catch (error) {
-        this.error = error.response?.data?.detail || 'Error al crear ítem de inventario'
+        this.error = error.response?.data?.detail || 'Error al crear el ítem de inventario'
         throw error
       } finally {
         this.isLoading = false
       }
     },
 
-    async updateInventoryItem(id, itemData) {
+    async updateInventoryItem(productId, itemData) {
       this.isLoading = true
       this.error = null
       
       try {
-        const response = await axios.put(`${API_BASE_URL}/api/inventory/inventory/${id}`, itemData, {
+        const response = await axios.put(`${API_BASE_URL}/stock/${productId}`, itemData, {
           ...this.getAuthHeaders()
         })
         
@@ -96,7 +95,7 @@ export const useInventoryStore = defineStore('inventory', {
         
         return response.data
       } catch (error) {
-        this.error = error.response?.data?.detail || 'Error al actualizar ítem de inventario'
+        this.error = error.response?.data?.detail || 'Error al actualizar el ítem de inventario'
         throw error
       } finally {
         this.isLoading = false
@@ -108,17 +107,16 @@ export const useInventoryStore = defineStore('inventory', {
       this.error = null
       
       try {
-        const response = await axios.post(`${API_BASE_URL}/api/inventory/inventory/movement`, movementData, {
+        const response = await axios.post(`${API_BASE_URL}/stock/movement`, movementData, {
           ...this.getAuthHeaders()
         })
         
-        // Recargar lista de inventario y alertas
+        // Recargar lista de inventario
         await this.fetchInventory()
-        await this.fetchLowStockAlerts()
         
         return response.data
       } catch (error) {
-        this.error = error.response?.data?.detail || 'Error al procesar movimiento de stock'
+        this.error = error.response?.data?.detail || 'Error al procesar el movimiento de stock'
         throw error
       } finally {
         this.isLoading = false
@@ -130,17 +128,14 @@ export const useInventoryStore = defineStore('inventory', {
       this.error = null
       
       try {
-        const response = await axios.post(`${API_BASE_URL}/api/inventory/inventory/adjust`, adjustmentData, {
-          ...this.getAuthHeaders()
-        })
+        const response = await this.updateInventoryItem(
+          adjustmentData.product_id,
+          { current_stock: adjustmentData.new_quantity }
+        )
         
-        // Recargar lista de inventario y alertas
-        await this.fetchInventory()
-        await this.fetchLowStockAlerts()
-        
-        return response.data
+        return response
       } catch (error) {
-        this.error = error.response?.data?.detail || 'Error al ajustar stock'
+        this.error = error.response?.data?.detail || 'Error al ajustar el stock'
         throw error
       } finally {
         this.isLoading = false
@@ -152,15 +147,16 @@ export const useInventoryStore = defineStore('inventory', {
       this.error = null
       
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/inventory/alerts/low-stock`, {
+        const response = await axios.get(`${API_BASE_URL}/stock/alerts/low-stock`, {
           ...this.getAuthHeaders()
         })
         
         this.lowStockAlerts = response.data
         return response.data
       } catch (error) {
-        this.error = error.response?.data?.detail || 'Error al cargar alertas de stock'
-        throw error
+        this.error = 'No se pudieron cargar las alertas de stock bajo'
+        this.lowStockAlerts = []
+        return []
       } finally {
         this.isLoading = false
       }
@@ -171,15 +167,15 @@ export const useInventoryStore = defineStore('inventory', {
       this.error = null
       
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/inventory/stats`, {
+        const response = await axios.get(`${API_BASE_URL}/stock/stats`, {
           ...this.getAuthHeaders()
         })
         
         this.stats = response.data
         return response.data
       } catch (error) {
-        this.error = error.response?.data?.detail || 'Error al cargar estadísticas'
-        throw error
+        this.error = 'No se pudieron cargar las estadísticas'
+        return null
       } finally {
         this.isLoading = false
       }
@@ -190,7 +186,7 @@ export const useInventoryStore = defineStore('inventory', {
       this.error = null
       
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/inventory/inventory/${sku}/movements`, {
+        const response = await axios.get(`${API_BASE_URL}/stock/${sku}/movements`, {
           params: { limit },
           ...this.getAuthHeaders()
         })
@@ -205,21 +201,19 @@ export const useInventoryStore = defineStore('inventory', {
       }
     },
 
-    async deleteInventoryItem(id) {
+    async deleteInventoryItem(productId) {
       this.isLoading = true
       this.error = null
       
       try {
-        const response = await axios.delete(`${API_BASE_URL}/api/inventory/inventory/${id}`, {
+        await axios.delete(`${API_BASE_URL}/stock/${productId}`, {
           ...this.getAuthHeaders()
         })
         
         // Recargar lista de inventario
         await this.fetchInventory()
-        
-        return response.data
       } catch (error) {
-        this.error = error.response?.data?.detail || 'Error al eliminar ítem de inventario'
+        this.error = error.response?.data?.detail || 'Error al eliminar el ítem de inventario'
         throw error
       } finally {
         this.isLoading = false

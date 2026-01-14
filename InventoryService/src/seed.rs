@@ -7,7 +7,6 @@ use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
 use rust_decimal_macros::dec;
-use rust_decimal::Decimal; // Corrected import
 
 #[derive(Deserialize, Debug)]
 struct SeedOrderItem {

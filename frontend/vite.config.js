@@ -7,14 +7,17 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api/auth': {
-        target: 'http://localhost:8000',
+        target: 'http://host.docker.internal:8001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/auth/, '')
+        rewrite: (path) => path.replace(/^\/api\/auth/, '/auth')
       },
       '/api/products': {
-        target: 'http://localhost:8001',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/products/, '')
+        target: 'http://host.docker.internal:80',
+        changeOrigin: true
+      },
+      '/api/categories': {
+        target: 'http://host.docker.internal:80',
+        changeOrigin: true
       },
       '/api/inventory': {
         target: 'http://localhost:8002',
