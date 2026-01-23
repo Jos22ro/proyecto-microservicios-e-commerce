@@ -5,25 +5,17 @@ import axios from 'axios'
 
 export const useNotificationsStore = defineStore('notifications', {
   state: () => ({
-    // Estado de notificaciones
     isLoading: false,
     error: null,
-    
-    // Configuración
     notificationsConfig: {
-      apiUrl: '/api/notify',
+      apiUrl: 'http://localhost:8082/api/v1',
       timeout: 10000
     },
-    
-    // Últimas notificaciones enviadas (para UI feedback)
     recentNotifications: []
   }),
 
   getters: {
-    // Verificar si hay notificaciones recientes
     hasRecentNotifications: (state) => state.recentNotifications.length > 0,
-    
-    // Obtener notificaciones recientes ordenadas por tiempo
     recentNotificationsSorted: (state) => {
       return [...state.recentNotifications].sort((a, b) => 
         new Date(b.timestamp) - new Date(a.timestamp)
@@ -32,40 +24,35 @@ export const useNotificationsStore = defineStore('notifications', {
   },
 
   actions: {
-    // Limpiar errores
     clearError() {
       this.error = null
     },
     
-    // Agregar notificación al historial reciente
     addRecentNotification(notification) {
       const recentNotification = {
         id: Date.now() + Math.random(),
         ...notification,
         timestamp: new Date().toISOString()
       }
-      
       this.recentNotifications.unshift(recentNotification)
-      
-      // Mantener solo las últimas 10 notificaciones
       if (this.recentNotifications.length > 10) {
         this.recentNotifications = this.recentNotifications.slice(0, 10)
       }
     },
     
-    // Método genérico para enviar notificaciones
     async sendNotification(event, email, orderId, extraData = '') {
-      const authStore = useAuthStore()
-      
       return await loadingManager.withLoading('sendNotification', async () => {
         this.error = null
         
         try {
+          // CAMBIO CRÍTICO: Aunque el código fuente de Go diga string, 
+          // el log del contenedor confirma que espera un 'uint'.
+          // Usamos Number() para que el JSON sea un entero y no un texto.
           const payload = {
-            event,
-            email,
-            order_id: orderId,
-            extra_data: extraData
+            event: String(event),
+            email: String(email || ''),
+            order_id: Number(orderId), 
+            extra_data: String(extraData)
           }
           
           const response = await axios.post(
@@ -79,34 +66,37 @@ export const useNotificationsStore = defineStore('notifications', {
             }
           )
           
-          if (response.data.message) {
-            // Agregar al historial de notificaciones recientes
+          if (response.status === 200 || response.status === 201) {
+            const successMsg = response.data.message || 'Notificación enviada con éxito'
+            
             this.addRecentNotification({
               event,
               email,
               order_id: orderId,
               extra_data: extraData,
               status: 'success',
-              message: response.data.message
+              message: successMsg
             })
             
-            return { success: true, message: response.data.message }
+            return { success: true, message: successMsg }
           } else {
             throw new Error('Respuesta inesperada del servicio de notificaciones')
           }
           
         } catch (error) {
-          const errorInfo = ErrorHandler.handleApiError(error, 'sendNotification')
-          this.error = errorInfo.message
+          // Capturamos el error específico que devuelve Gin (Go) si falla el binding
+          const serverError = error.response?.data?.error || error.response?.data?.message;
+          const errorInfo = ErrorHandler.handleApiError(error, 'sendNotification');
           
-          // Agregar notificación fallida al historial para debugging
+          this.error = serverError || errorInfo.message;
+          
           this.addRecentNotification({
             event,
             email,
             order_id: orderId,
             extra_data: extraData,
             status: 'error',
-            error: errorInfo.message
+            error: this.error
           })
           
           throw new Error(this.error)
@@ -114,7 +104,6 @@ export const useNotificationsStore = defineStore('notifications', {
       })
     },
     
-    // Confirmación de pedido creado
     async sendOrderConfirmation(orderId, email, customerName = '') {
       return await this.sendNotification(
         'order_created',
@@ -124,7 +113,6 @@ export const useNotificationsStore = defineStore('notifications', {
       )
     },
     
-    // Confirmación de pago aprobado
     async sendPaymentConfirmation(orderId, email, amount) {
       return await this.sendNotification(
         'payment_confirmed',
@@ -134,7 +122,6 @@ export const useNotificationsStore = defineStore('notifications', {
       )
     },
     
-    // Notificación de cambio de estado
     async sendStatusChangeNotification(orderId, email, newStatus) {
       return await this.sendNotification(
         'status_changed',
@@ -144,12 +131,9 @@ export const useNotificationsStore = defineStore('notifications', {
       )
     },
     
-    // Confirmación de pedido con información completa
     async sendCompleteOrderConfirmation(order) {
       const authStore = useAuthStore()
-      
       let extraData = `Total: $${order.total || order.amount || '0.00'}`
-      
       if (order.items && Array.isArray(order.items)) {
         extraData += ` | Productos: ${order.items.length}`
       }
@@ -161,10 +145,8 @@ export const useNotificationsStore = defineStore('notifications', {
       )
     },
     
-    // Confirmación de pago con información del pago
     async sendCompletePaymentConfirmation(payment) {
       const authStore = useAuthStore()
-      
       return await this.sendPaymentConfirmation(
         payment.order_id,
         authStore.user?.email || payment.email,
@@ -172,10 +154,8 @@ export const useNotificationsStore = defineStore('notifications', {
       )
     },
     
-    // Actualización de estado de pedido con tracking
     async sendOrderStatusUpdate(order, newStatus, trackingInfo = '') {
       const authStore = useAuthStore()
-      
       let extraData = newStatus
       if (trackingInfo) {
         extraData += ` | Tracking: ${trackingInfo}`
@@ -188,12 +168,10 @@ export const useNotificationsStore = defineStore('notifications', {
       )
     },
     
-    // Limpiar notificaciones recientes
     clearRecentNotifications() {
       this.recentNotifications = []
     },
     
-    // Limpiar store completo
     resetStore() {
       this.clearError()
       this.clearRecentNotifications()
