@@ -8,7 +8,7 @@ module.exports = (sequelize) => {
       autoIncrement: true
     },
     order_id: {
-      type: DataTypes.UUID,
+      type: DataTypes.STRING(255),
       allowNull: false,
       field: 'order_id'
     },

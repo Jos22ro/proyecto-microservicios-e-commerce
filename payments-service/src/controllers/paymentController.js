@@ -33,7 +33,7 @@ class PaymentController {
       // Create payment record with PENDING status
       const payment = await db.Payment.create({
         order_id,
-        user_id: userId,
+        user_id: parseInt(userId),
         amount: parseFloat(amount.toFixed(2)),
         status: 'PENDING',
         transaction_id: transactionId

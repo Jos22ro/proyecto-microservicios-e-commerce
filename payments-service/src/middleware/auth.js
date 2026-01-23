@@ -12,7 +12,7 @@ const authenticateToken = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.SECRET_KEY);
     req.user = {
       id: decoded.sub,
       role: decoded.role,
@@ -49,7 +49,7 @@ const optionalAuth = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.SECRET_KEY);
     req.user = {
       id: decoded.sub,
       role: decoded.role,
