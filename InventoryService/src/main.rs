@@ -1,23 +1,23 @@
+mod db;
 mod handlers;
 mod models;
-mod routes;
-mod db;
 mod order_logic;
-mod stock_logic;
-mod seed; // New module declaration
+mod routes;
+mod seed;
+mod stock_logic; // New module declaration
 
-
-use tower_http::cors::{CorsLayer, Any};
+// use axum::serve;  // Eliminado ya que no se usará
 use db::Db;
-use routes::create_router;
-use std::net::SocketAddr;
 use dotenvy::dotenv;
+use routes::create_router;
 use sqlx::postgres::PgPoolOptions;
+use std::net::SocketAddr;
+use tower_http::cors::{Any, CorsLayer};
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    
+
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     let db: Db = PgPoolOptions::new()
@@ -35,11 +35,12 @@ async fn main() {
         .allow_methods(Any)
         .allow_headers(Any);
 
-    let app = create_router(db)
-        .layer(cors);
+    let app = create_router(db).layer(cors);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8002));
     println!("listening on {}", addr);
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }

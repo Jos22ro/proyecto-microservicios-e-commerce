@@ -8,13 +8,13 @@ use axum::{
 // ⚠️ Nota: Se ha eliminado `use serde_json::json;` si no se usa.
 
 use crate::{
+    db::Db, // Alias del Pool de la DB
     // ✅ Se unifica la importación de tipos a `models`. Esto resuelve E0308.
-    models::{CreateOrder, Order, CreateStock, UpdateStock, Stock}, 
+    models::{CreateOrder, CreateStock, Order, Stock, UpdateStock},
     // ✅ Se importa OrderManager. Esto resuelve E0433/E0432.
-    order_logic::{OrderManager}, 
+    order_logic::OrderManager,
     // Se mantiene la importación necesaria para la gestión de stock
-    stock_logic::{StockManager, StockManagement}, 
-    db::Db // Alias del Pool de la DB
+    stock_logic::{StockManagement, StockManager},
 };
 
 // ----------------------------------------------------------------------
@@ -47,19 +47,22 @@ pub async fn create_order(
     State(db): State<Db>,
     Json(payload): Json<CreateOrder>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let mut tx = db.begin().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let mut tx = db
+        .begin()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     // ✅ La llamada ahora usa order_logic::OrderManager, que acabamos de definir.
     let result = OrderManager::create_order_in_db(&mut tx, payload.user_id, &payload.items).await;
 
     match result {
         Ok(order) => {
-            tx.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            tx.commit()
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             Ok((StatusCode::CREATED, Json(order)))
         }
-        Err(_e) => {
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
+        Err(_e) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
 
@@ -152,9 +155,7 @@ pub async fn get_stock_handler(
     }
 }
 
-pub async fn get_all_stock(
-    State(pool): State<Db>,
-) -> Result<Json<Vec<Stock>>, StatusCode> {
+pub async fn get_all_stock(State(pool): State<Db>) -> Result<Json<Vec<Stock>>, StatusCode> {
     match StockManager::get_stock(&pool, None).await {
         Ok(stocks) => Ok(Json(stocks)),
         Err(e) => {

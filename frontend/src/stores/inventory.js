@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 import { useAuthStore } from './auth'
 
-const API_BASE_URL = import.meta.env.VITE_INVENTORY_SERVICE_URL || 'http://localhost:8002'
+const API_BASE_URL = import.meta.env.VITE_INVENTORY_SERVICE_URL || 'http://localhost:8003'
 
 export const useInventoryStore = defineStore('inventory', {
   state: () => ({
@@ -107,7 +107,8 @@ export const useInventoryStore = defineStore('inventory', {
       this.error = null
       
       try {
-        const response = await axios.post(`${API_BASE_URL}/stock/movement`, movementData, {
+        
+        const response = await axios.post(`${API_BASE_URL}/stock`, movementData, {
           ...this.getAuthHeaders()
         })
         
@@ -136,65 +137,6 @@ export const useInventoryStore = defineStore('inventory', {
         return response
       } catch (error) {
         this.error = error.response?.data?.detail || 'Error al ajustar el stock'
-        throw error
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async fetchLowStockAlerts() {
-      this.isLoading = true
-      this.error = null
-      
-      try {
-        const response = await axios.get(`${API_BASE_URL}/stock/alerts/low-stock`, {
-          ...this.getAuthHeaders()
-        })
-        
-        this.lowStockAlerts = response.data
-        return response.data
-      } catch (error) {
-        this.error = 'No se pudieron cargar las alertas de stock bajo'
-        this.lowStockAlerts = []
-        return []
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async fetchStats() {
-      this.isLoading = true
-      this.error = null
-      
-      try {
-        const response = await axios.get(`${API_BASE_URL}/stock/stats`, {
-          ...this.getAuthHeaders()
-        })
-        
-        this.stats = response.data
-        return response.data
-      } catch (error) {
-        this.error = 'No se pudieron cargar las estadísticas'
-        return null
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async fetchMovementHistory(sku, limit = 50) {
-      this.isLoading = true
-      this.error = null
-      
-      try {
-        const response = await axios.get(`${API_BASE_URL}/stock/${sku}/movements`, {
-          params: { limit },
-          ...this.getAuthHeaders()
-        })
-        
-        this.movementHistory = response.data
-        return response.data
-      } catch (error) {
-        this.error = error.response?.data?.detail || 'Error al cargar historial de movimientos'
         throw error
       } finally {
         this.isLoading = false

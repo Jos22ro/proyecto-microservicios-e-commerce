@@ -68,6 +68,19 @@ const routes = [
     name: 'User',
     component: () => import('./views/user.vue'),
     meta: { requiresAuth: true }
+  },
+  // Rutas de pago
+  {
+    path: '/payment-gateway',
+    name: 'PaymentGateway',
+    component: () => import('./views/PaymentGateway.vue'),
+    meta: { requiresAuth: true, restrictedToCustomers: true }
+  },
+  {
+    path: '/payment-status/:transactionId',
+    name: 'PaymentStatus',
+    component: () => import('./views/PaymentStatus.vue'),
+    meta: { requiresAuth: true, restrictedToCustomers: true }
   }
 ]
 

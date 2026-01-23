@@ -20,7 +20,7 @@ export default defineConfig({
         changeOrigin: true
       },
       '/api/inventory': {
-        target: 'http://localhost:8002',
+        target: 'http://localhost:8003',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/inventory/, '')
       }

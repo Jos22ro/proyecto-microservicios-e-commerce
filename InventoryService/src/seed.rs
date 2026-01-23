@@ -3,10 +3,10 @@ use crate::{
     models::{CreateOrderItem, OrderStatus},
     order_logic::OrderManager,
 };
+use rust_decimal_macros::dec;
 use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
-use rust_decimal_macros::dec;
 
 #[derive(Deserialize, Debug)]
 struct SeedOrderItem {
@@ -52,8 +52,8 @@ pub async fn seed_db(db: &Db) {
         }
     };
     let mut contents = String::new();
-    file.read_to_string(&mut contents).expect("Failed to read orders.json");
-
+    file.read_to_string(&mut contents)
+        .expect("Failed to read orders.json");
 
     let seed_orders: Vec<SeedOrder> = match serde_json::from_str(&contents) {
         Ok(s) => s,
@@ -64,7 +64,10 @@ pub async fn seed_db(db: &Db) {
     };
 
     for seed_order in seed_orders {
-        let mut tx = db.begin().await.expect("Failed to begin transaction for seed order");
+        let mut tx = db
+            .begin()
+            .await
+            .expect("Failed to begin transaction for seed order");
 
         let create_order_items: Vec<CreateOrderItem> = seed_order
             .items
@@ -76,13 +79,20 @@ pub async fn seed_db(db: &Db) {
             })
             .collect();
 
-        match OrderManager::create_order_in_db(&mut tx, seed_order.user_id, &create_order_items).await {
+        match OrderManager::create_order_in_db(&mut tx, seed_order.user_id, &create_order_items)
+            .await
+        {
             Ok(_) => {
-                tx.commit().await.expect("Failed to commit seed order transaction");
+                tx.commit()
+                    .await
+                    .expect("Failed to commit seed order transaction");
                 println!("Seeded order for user_id: {}", seed_order.user_id);
             }
             Err(e) => {
-                eprintln!("Failed to seed order for user_id {}: {}", seed_order.user_id, e);
+                eprintln!(
+                    "Failed to seed order for user_id {}: {}",
+                    seed_order.user_id, e
+                );
                 let _ = tx.rollback().await;
             }
         }

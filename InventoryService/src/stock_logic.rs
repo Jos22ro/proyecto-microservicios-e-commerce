@@ -1,13 +1,15 @@
-use crate::models::{Stock, CreateStock, UpdateStock};
-use sqlx::{PgPool, Error, QueryBuilder, Postgres};
+use crate::models::{CreateStock, Stock, UpdateStock};
 use async_trait::async_trait;
-
-
+use sqlx::{Error, PgPool, Postgres, QueryBuilder};
 
 #[async_trait]
 pub trait StockManagement {
     async fn add_stock(pool: &PgPool, new_stock: CreateStock) -> Result<Stock, Error>;
-    async fn update_stock(pool: &PgPool, product_id: i32, updated_stock: UpdateStock) -> Result<Option<Stock>, Error>;
+    async fn update_stock(
+        pool: &PgPool,
+        product_id: i32,
+        updated_stock: UpdateStock,
+    ) -> Result<Option<Stock>, Error>;
     async fn delete_stock(pool: &PgPool, product_id: i32) -> Result<bool, Error>;
     async fn get_stock(pool: &PgPool, product_id: Option<i32>) -> Result<Vec<Stock>, Error>;
 }
@@ -34,7 +36,11 @@ impl StockManagement for StockManager {
         Ok(stock)
     }
 
-    async fn update_stock(pool: &PgPool, product_id: i32, updated_stock: UpdateStock) -> Result<Option<Stock>, Error> {
+    async fn update_stock(
+        pool: &PgPool,
+        product_id: i32,
+        updated_stock: UpdateStock,
+    ) -> Result<Option<Stock>, Error> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new("UPDATE stock SET ");
         let mut updates_made = false;
 
@@ -47,15 +53,19 @@ impl StockManagement for StockManager {
             if updates_made {
                 query_builder.push(", ");
             }
-            query_builder.push("warehouse_location = ").push_bind(warehouse_location);
+            query_builder
+                .push("warehouse_location = ")
+                .push_bind(warehouse_location);
             updates_made = true;
         }
-        
+
         if !updates_made {
             return Ok(None); // No fields to update
         }
 
-        query_builder.push(" WHERE product_id = ").push_bind(product_id);
+        query_builder
+            .push(" WHERE product_id = ")
+            .push_bind(product_id);
         query_builder.push(" RETURNING id, product_id, quantity, last_updated, warehouse_location");
 
         let stock = query_builder
@@ -95,7 +105,7 @@ impl StockManagement for StockManager {
                 )
                 .fetch_all(pool)
                 .await?
-            },
+            }
             None => {
                 sqlx::query_as!(
                     Stock,

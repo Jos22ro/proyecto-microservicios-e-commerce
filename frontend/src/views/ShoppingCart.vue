@@ -117,26 +117,19 @@
               ✅ Envío gratuito en pedidos superiores a $100
             </p>
             <p class="text-xs text-gray-600 mt-1">
-              🔒 Pago 100% seguro
+              🔒 Pago 100% seguro con encriptación SSL
+            </p>
+            <p class="text-xs text-gray-600 mt-1">
+              🚀 Procesamiento instantáneo
             </p>
           </div>
 
           <!-- Botón de checkout -->
           <button
             @click="proceedToCheckout"
-            :disabled="isProcessingCheckout"
-            class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white py-3 px-4 rounded-md font-medium transition-colors duration-200"
+            class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-md font-medium transition-colors duration-200"
           >
-            <span v-if="isProcessingCheckout" class="flex items-center justify-center">
-              <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Procesando...
-            </span>
-            <span v-else>
-              Proceder al Pago
-            </span>
+            Proceder al Pago
           </button>
 
           <!-- Métodos de pago -->
@@ -186,34 +179,7 @@
       </div>
     </div>
 
-    <!-- Modal de éxito de checkout -->
-    <div
-      v-if="showCheckoutSuccess"
-      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-    >
-      <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3 text-center">
-          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-            <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-medium text-gray-900 mt-4">¡Pedido realizado!</h3>
-          <p class="text-sm text-gray-500 mt-2">
-            Tu pedido ha sido procesado exitosamente. Recibirás un email de confirmación pronto.
-          </p>
-          <div class="mt-4">
-            <router-link
-              to="/"
-              @click="showCheckoutSuccess = false"
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200"
-            >
-              Volver al inicio
-            </router-link>
-          </div>
-        </div>
-      </div>
-    </div>
+
   </div>
 </template>
 
@@ -230,8 +196,6 @@ const authStore = useAuthStore()
 
 // Estados reactivos
 const showClearCartModal = ref(false)
-const showCheckoutSuccess = ref(false)
-const isProcessingCheckout = ref(false)
 
 // Computed properties
 const cartItems = computed(() => cartStore.items)
@@ -284,24 +248,14 @@ const proceedToCheckout = async () => {
     return
   }
 
-  isProcessingCheckout.value = true
-
-  try {
-    // Simular procesamiento de pago
-    const order = await cartStore.checkout()
-    
-    // Mostrar modal de éxito
-    showCheckoutSuccess.value = true
-    
-    // Log del pedido (en una app real se enviaría al backend)
-    console.log('Pedido procesado:', order)
-    
-  } catch (error) {
-    console.error('Error processing checkout:', error)
-    alert('Error al procesar el pago. Por favor, intenta nuevamente.')
-  } finally {
-    isProcessingCheckout.value = false
+  // Verificar que el carrito tenga productos
+  if (cartItems.value.length === 0) {
+    alert('Tu carrito está vacío')
+    return
   }
+
+  // Redirigir a la pasarela de pago
+  router.push('/payment-gateway')
 }
 
 // Verificar si el usuario está autenticado al montar el componente

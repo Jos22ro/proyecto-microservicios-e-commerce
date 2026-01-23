@@ -312,15 +312,6 @@
                 />
               </div>
               <div>
-                <label for="reason" class="block text-sm font-medium text-gray-700">Razón</label>
-                <input
-                  id="reason"
-                  v-model="movementForm.reason"
-                  type="text"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div>
                 <label for="warehouse_location" class="block text-sm font-medium text-gray-700">Ubicación en Almacén</label>
                 <input
                   id="warehouse_location"
@@ -392,7 +383,6 @@ const movementForm = reactive({
   product_id: null,
   quantity: 1,
   movement_type: 'IN',
-  reason: '',
   warehouse_location: ''
 })
 
@@ -507,8 +497,9 @@ const handleMovement = async () => {
   
   try {
     await inventoryStore.processStockMovement({
-      ...movementForm,
-      product_id: movementForm.product_id
+      product_id: movementForm.product_id,
+      quantity: movementForm.quantity,
+      warehouse_location: movementForm.warehouse_location
     })
     closeMovementModal()
     await loadInventory()

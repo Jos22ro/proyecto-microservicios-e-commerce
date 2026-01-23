@@ -1,11 +1,11 @@
 use crate::models::{CreateOrderItem, Order, OrderItem, OrderStatus};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
-use sqlx::{Transaction, Postgres};
 use sqlx::PgPool;
-// Importar async_trait si OrderManager implementara un trait, 
+use sqlx::{Postgres, Transaction};
+// Importar async_trait si OrderManager implementara un trait,
 // pero en este caso, se usa como estructura estática, no es necesario.
-// use async_trait::async_trait; 
+// use async_trait::async_trait;
 
 // 🆕 Estructura OrderManager (Vacía, solo para agrupar métodos)
 pub struct OrderManager;
@@ -15,14 +15,14 @@ impl OrderManager {
     // La función original ahora es un método asociado público
     pub async fn create_order_in_db(
         // Usamos &mut Transaction<'_, Postgres> para ser más explícitos
-        tx: &mut Transaction<'_, Postgres>, 
+        tx: &mut Transaction<'_, Postgres>,
         user_id: i32,
         items: &[CreateOrderItem],
     ) -> Result<Order, sqlx::Error> {
         // Cálculo del precio total
         let total_price = items.iter().fold(dec!(0.0), |acc, item| {
             // Asegúrate de que las operaciones de Decimal y i32/i16/etc. sean correctas
-            acc + item.price * Decimal::from(item.quantity) 
+            acc + item.price * Decimal::from(item.quantity)
         });
 
         // 1. Insertar la orden principal
@@ -72,7 +72,10 @@ impl OrderManager {
         Ok(order)
     }
 
-    pub async fn get_order_by_id(pool: &PgPool, order_id: i32) -> Result<Option<Order>, sqlx::Error> {
+    pub async fn get_order_by_id(
+        pool: &PgPool,
+        order_id: i32,
+    ) -> Result<Option<Order>, sqlx::Error> {
         let order = sqlx::query_as!(
             Order,
             r#"
@@ -92,7 +95,10 @@ impl OrderManager {
         Ok(order)
     }
 
-    pub async fn get_orders_by_user_id(pool: &PgPool, user_id: i32) -> Result<Vec<Order>, sqlx::Error> {
+    pub async fn get_orders_by_user_id(
+        pool: &PgPool,
+        user_id: i32,
+    ) -> Result<Vec<Order>, sqlx::Error> {
         let orders = sqlx::query_as!(
             Order,
             r#"

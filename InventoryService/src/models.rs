@@ -63,4 +63,3 @@ pub struct UpdateStock {
     pub quantity: Option<i32>,
     pub warehouse_location: Option<String>,
 }
-
