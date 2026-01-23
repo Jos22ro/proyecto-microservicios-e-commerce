@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
+import { useNotificationsStore } from './notifications'
 
 export const useCartStore = defineStore('cart', {
   state: () => ({
@@ -136,6 +137,9 @@ export const useCartStore = defineStore('cart', {
 
     // Procesar checkout (simulado)
     async checkout() {
+      const authStore = useAuthStore()
+      const notificationsStore = useNotificationsStore()
+      
       this.isLoading = true
       this.error = null
       
@@ -143,18 +147,35 @@ export const useCartStore = defineStore('cart', {
         // Simular procesamiento de pago
         await new Promise(resolve => setTimeout(resolve, 2000))
         
-        // Aquí iría la llamada real a la API de pago
+        // Crear objeto de orden
         const order = {
           items: [...this.items],
           total: this.totalAmount,
           item_count: this.itemCount,
-          order_date: new Date().toISOString()
+          order_date: new Date().toISOString(),
+          customer_name: authStore.user?.name || '',
+          email: authStore.user?.email || ''
+        }
+        
+        // Generar ID de orden
+        const orderId = Date.now()
+        
+        // Enviar notificación de confirmación de pedido (no bloqueante)
+        try {
+          await notificationsStore.sendOrderConfirmation(
+            orderId,
+            authStore.user?.email,
+            authStore.user?.name || ''
+          )
+        } catch (notificationError) {
+          // No fallar el flujo si la notificación falla
+          console.warn('Error al enviar notificación de pedido:', notificationError.message)
         }
         
         // Limpiar carrito después del checkout
         this.clearCart()
         
-        return order
+        return { ...order, order_id: orderId }
       } catch (error) {
         this.error = 'Error al procesar el pago'
         throw error

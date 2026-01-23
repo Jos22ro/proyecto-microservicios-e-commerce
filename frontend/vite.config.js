@@ -23,6 +23,11 @@ export default defineConfig({
         target: 'http://localhost:8003',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/inventory/, '')
+      },
+      '/api/notify': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/notify/, '/api/v1/notify')
       }
     }
   }

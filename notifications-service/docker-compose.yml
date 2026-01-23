@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Notifications Service
+  notifications-service:
+    build: .
+    container_name: notifications-service
+    ports:
+      - "8082:8082"
+    environment:
+      # SMTP Configuration
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - EMAIL_FROM=${EMAIL_FROM:-angel2296rojas@gmail.com}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD:-tmwq uabq htxb tgzr}
+      
+      # Service Configuration
+      - PORT=${PORT:-8082}
+      - HOST=${HOST:-0.0.0.0}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      
+      # Development overrides
+      - NODE_ENV=${NODE_ENV:-development}
+    networks:
+      - microservices_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/api/v1/notify"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      # For development - uncomment to mount source code
+      # - .:/app
+      - ./notifications.log:/app/notifications.log
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: For local development with database (if needed in future)
+  # notification_db:
+  #   image: postgres:15-alpine
+  #   container_name: notification-db
+  #   environment:
+  #     POSTGRES_DB: notifications
+  #     POSTGRES_USER: notification_user
+  #     POSTGRES_PASSWORD: notification_password
+  #   ports:
+  #     - "5439:5432"
+  #   volumes:
+  #     - notification_postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - microservices_network
+
+# volumes:
+#   notification_postgres_data:
+
+networks:
+  microservices_network:
+    external: true
+    # This network should be created separately if it doesn't exist:
+    # docker network create microservices_network

@@ -108,10 +108,13 @@
                 {{ isAdmin ? 'Administrador' : 'Cliente' }}
               </span>
             </div>
-          </div>
+           </div>
 
-          <!-- Botón de logout -->
-          <button
+           <!-- Notificaciones -->
+           <NotificationBell v-if="isAuthenticated" class="hidden sm:block" />
+
+           <!-- Botón de logout -->
+           <button
             v-if="isAuthenticated"
             @click="logout"
             class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
@@ -192,6 +195,13 @@
             Administración
           </router-link>
         </template>
+        
+        <!-- Notificaciones en menú móvil -->
+        <div v-if="isAuthenticated" class="border-t border-gray-200 pt-2">
+          <div class="px-3 py-2">
+            <NotificationBell />
+          </div>
+        </div>
       </div>
     </div>
   </nav>
@@ -201,6 +211,7 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
+import NotificationBell from './NotificationBell.vue'
 
 const authStore = useAuthStore()
 const cartStore = useCartStore()

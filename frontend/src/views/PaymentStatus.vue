@@ -128,10 +128,39 @@
               <p class="text-sm text-gray-900">
                 {{ formatDate(currentPayment.updated_at) }}
               </p>
+          </div>
+        </div>
+        
+        <!-- Notificaciones Recientes -->
+        <div v-if="notificationsStore.hasRecentNotifications" class="mt-6">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 class="text-sm font-medium text-blue-900 mb-2">Notificaciones Enviadas</h3>
+            <div class="space-y-2">
+              <div 
+                v-for="notification in notificationsStore.recentNotificationsSorted.slice(0, 3)" 
+                :key="notification.id"
+                class="text-sm"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-blue-700">
+                    {{ getNotificationMessage(notification) }}
+                  </span>
+                  <span 
+                    :class="notification.status === 'success' ? 'text-green-600' : 'text-red-600'"
+                    class="text-xs"
+                  >
+                    {{ notification.status === 'success' ? '✓ Enviado' : '✗ Error' }}
+                  </span>
+                </div>
+                <div class="text-xs text-blue-500">
+                  {{ formatNotificationTime(notification.timestamp) }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
       <!-- Items del pedido -->
       <div v-if="orderItems && orderItems.length > 0" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -228,12 +257,16 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePaymentsStore } from '../stores/payments'
 import { useCartStore } from '../stores/cart'
+import { useNotificationsStore } from '../stores/notifications'
+import { useAuthStore } from '../stores/auth'
 import StatusIndicator from '../components/StatusIndicator.vue'
 
 const route = useRoute()
 const router = useRouter()
 const paymentsStore = usePaymentsStore()
 const cartStore = useCartStore()
+const notificationsStore = useNotificationsStore()
+const authStore = useAuthStore()
 
 // Estado
 const isCheckingStatus = ref(false)
@@ -370,9 +403,23 @@ watch(currentStatus, (newStatus) => {
     // Detener polling cuando el pago esté completo
     stopPolling()
     
-    // Si fue aprobado, limpiar el carrito
+    // Si fue aprobado, limpiar el carrito y enviar notificación
     if (newStatus === 'APPROVED') {
       cartStore.clearCart()
+      
+      // Enviar notificación de cambio de estado (no bloqueante)
+      try {
+        const notificationsStore = useNotificationsStore()
+        if (paymentsStore.currentPayment) {
+          notificationsStore.sendStatusChangeNotification(
+            { id: paymentsStore.currentPayment.order_id, email: authStore.user?.email },
+            'APPROVED',
+            'Pago procesado exitosamente'
+          )
+        }
+      } catch (notificationError) {
+        console.warn('Error al enviar notificación de aprobación:', notificationError.message)
+      }
     }
   } else if (['PENDING', 'PROCESSING'].includes(newStatus)) {
     // Iniciar polling para estados intermedios
@@ -399,4 +446,21 @@ onUnmounted(() => {
   // Limpiar polling al salir del componente
   stopPolling()
 })
+
+// Helper functions
+const getNotificationMessage = (notification) => {
+  const messages = {
+    'order_created': 'Pedido confirmado',
+    'payment_confirmed': 'Pago aprobado',
+    'status_changed': 'Estado actualizado'
+  }
+  return messages[notification.event] || 'Notificación enviada'
+}
+
+const formatNotificationTime = (timestamp) => {
+  return new Date(timestamp).toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
 </script>

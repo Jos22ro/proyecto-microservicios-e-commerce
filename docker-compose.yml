@@ -231,6 +231,30 @@ services:
       retries: 3
       start_period: 40s
 
+  # Notifications Service (Go)
+  notifications_service:
+    build: ./notifications-service
+    container_name: notifications_service
+    ports:
+      - "8082:8082"
+    environment:
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - EMAIL_FROM=angel2296rojas@gmail.com
+      - EMAIL_PASSWORD=tmwq uabq htxb tgzr
+      - PORT=8082
+      - HOST=0.0.0.0
+      - LOG_LEVEL=info
+    networks:
+      - microservices_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/api/v1/notify"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   # Inventory Database
   inventory_db:
     image: postgres:16
@@ -296,6 +320,7 @@ services:
       - product_service
       - payments_service
       - inventory_service
+      - notifications_service
     networks:
       - microservices_network
     restart: unless-stopped

@@ -3,19 +3,32 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 
 	"gopkg.in/gomail.v2" // Importamos la librería para enviar correos
 )
 
 // ---------------------------------------------------------
-// CONFIGURACIÓN DE GMAIL (EDITA ESTO)
+// CONFIGURACIÓN DE GMAIL (desde variables de entorno)
 // ---------------------------------------------------------
-const (
-	SMTP_HOST = "smtp.gmail.com"
-	SMTP_PORT = 587
-	MY_EMAIL  = "rodriguezricciandres@gmail.com" // <--- Poner tu Gmail aquí
-	MY_PASS   = "rthdjtjylqepdwtx"               // <--- Poner tu App Password aquí
-)
+func getSMTPConfig() (host string, port int, email, password string) {
+	host = os.Getenv("SMTP_HOST")
+	email = os.Getenv("EMAIL_FROM")
+	password = os.Getenv("EMAIL_PASSWORD")
+	
+	if portStr := os.Getenv("SMTP_PORT"); portStr != "" {
+		if p, err := strconv.Atoi(portStr); err == nil {
+			port = p
+		} else {
+			port = 587 // default
+		}
+	} else {
+		port = 587 // default
+	}
+	
+	return
+}
 
 // ---------------------------------------------------------
 
@@ -100,19 +113,21 @@ func (s *NotificationService) sendStatusChangedEmail(req NotificationRequest) er
 // FUNCIÓN AUXILIAR PRIVADA (Hace el trabajo sucio de conectar con Gmail)
 // ---------------------------------------------------------
 func (s *NotificationService) sendEmail(to, subject, body string) error {
-	// Si el usuario no ha configurado el correo, solo avisamos en consola y no fallamos
-	if MY_EMAIL == "TU_CORREO@gmail.com" {
-		log.Println("[AVISO] No se envió el correo real porque faltan configurar las credenciales en service.go")
+	smtpHost, smtpPort, emailFrom, emailPass := getSMTPConfig()
+	
+	// Si las variables de entorno no están configuradas, solo avisamos en consola y no fallamos
+	if emailFrom == "" {
+		log.Println("[AVISO] No se envió el correo real porque faltan configurar las variables de entorno EMAIL_FROM")
 		return nil
 	}
 
 	m := gomail.NewMessage()
-	m.SetHeader("From", MY_EMAIL)
+	m.SetHeader("From", emailFrom)
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/plain", body)
 
-	d := gomail.NewDialer(SMTP_HOST, SMTP_PORT, MY_EMAIL, MY_PASS)
+	d := gomail.NewDialer(smtpHost, smtpPort, emailFrom, emailPass)
 
 	if err := d.DialAndSend(m); err != nil {
 		log.Printf("[ERROR] Falló el envío de correo real: %v", err)

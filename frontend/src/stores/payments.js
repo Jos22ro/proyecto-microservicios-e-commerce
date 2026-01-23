@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
 import { useCartStore } from './cart'
+import { useNotificationsStore } from './notifications'
 import { ErrorHandler, loadingManager } from '../utils/errorHandling'
 import axios from 'axios'
 
@@ -131,6 +132,7 @@ export const usePaymentsStore = defineStore('payments', {
     async createPayment(orderData) {
       const authStore = useAuthStore()
       const cartStore = useCartStore()
+      const notificationsStore = useNotificationsStore()
       
       return await loadingManager.withLoading('createPayment', async () => {
         this.error = null
@@ -174,6 +176,18 @@ export const usePaymentsStore = defineStore('payments', {
               ...this.currentPayment,
               createdAt: new Date().toISOString()
             })
+            
+            // Enviar notificación de confirmación de pago (no bloqueante)
+            try {
+              await notificationsStore.sendPaymentConfirmation(
+                this.currentPayment.order_id,
+                authStore.user?.email,
+                this.currentPayment.amount
+              )
+            } catch (notificationError) {
+              // No fallar el flujo si la notificación falla
+              console.warn('Error al enviar notificación de pago:', notificationError.message)
+            }
             
             return this.currentPayment
           } else {

@@ -177,12 +177,26 @@ class PaymentController {
     const userId = req.user.id;
 
     try {
-      const payment = await db.Payment.findOne({
-        where: {
-          id: parseInt(id),
-          user_id: userId
-        }
-      });
+      // Intentar buscar por ID numérico primero
+      let payment;
+      
+      if (!isNaN(id)) {
+        // Si es un número, buscar por payment.id
+        payment = await db.Payment.findOne({
+          where: {
+            id: parseInt(id),
+            user_id: userId
+          }
+        });
+      } else {
+        // Si no es número (es un UUID), buscar por transaction_id
+        payment = await db.Payment.findOne({
+          where: {
+            transaction_id: id,
+            user_id: userId
+          }
+        });
+      }
 
       if (!payment) {
         return res.status(404).json({
