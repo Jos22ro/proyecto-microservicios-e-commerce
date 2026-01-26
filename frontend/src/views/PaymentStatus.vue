@@ -66,6 +66,7 @@
           @retry-payment="handleRetryPayment"
           @continue-shopping="handleContinueShopping"
           @view-orders="handleViewOrders"
+          @view-order-details="viewOrderDetails"
           @check-status="handleCheckStatus"
           @cancel="handleCancel"
         />
@@ -363,8 +364,14 @@ const handleContinueShopping = () => {
 }
 
 const handleViewOrders = () => {
-  // Redirigir a la página de pedidos del usuario
-  router.push('/user')
+  // Redirigir a la página de órdenes del usuario
+  router.push('/orders')
+}
+
+const viewOrderDetails = () => {
+  if (currentPayment.value?.order_id) {
+    router.push(`/orders/${currentPayment.value.order_id}`)
+  }
 }
 
 const handleCheckStatus = () => {

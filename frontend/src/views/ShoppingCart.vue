@@ -43,15 +43,27 @@
 
         <!-- Acciones del carrito -->
         <div class="mt-6 flex justify-between items-center">
-          <router-link
-            to="/catalog"
-            class="inline-flex items-center text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
-          >
-            <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-            </svg>
-            Continuar comprando
-          </router-link>
+          <div class="flex items-center space-x-4">
+            <router-link
+              to="/catalog"
+              class="inline-flex items-center text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
+            >
+              <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+              </svg>
+              Continuar comprando
+            </router-link>
+            
+            <router-link
+              to="/orders"
+              class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
+            >
+              <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              Ver Mis Órdenes
+            </router-link>
+          </div>
 
           <button
             @click="clearCart"

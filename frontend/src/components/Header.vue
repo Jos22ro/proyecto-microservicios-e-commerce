@@ -47,6 +47,15 @@
               </span>
             </router-link>
             
+            <router-link
+              v-if="!isAdmin"
+              to="/orders"
+              class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
+              active-class="border-indigo-500 text-gray-900"
+            >
+              Mis Órdenes
+            </router-link>
+            
             <!-- Enlaces para administradores -->
             <template v-if="isAdmin">
               <router-link
@@ -62,6 +71,13 @@
                 active-class="border-indigo-500 text-gray-900"
               >
                 Inventario
+              </router-link>
+              <router-link
+                to="/orders"
+                class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
+                active-class="border-indigo-500 text-gray-900"
+              >
+                Órdenes
               </router-link>
               <router-link
                 to="/admin"
@@ -169,6 +185,15 @@
         >
           Carrito ({{ cartItemCount }})
         </router-link>
+        <router-link
+          v-if="!isAdmin"
+          to="/orders"
+          class="border-transparent text-gray-500 hover:bg-gray-100 hover:border-gray-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+          active-class="bg-indigo-50 border-indigo-500 text-indigo-700"
+          @click="closeMobileMenu"
+        >
+          Mis Órdenes
+        </router-link>
         <template v-if="isAdmin">
           <router-link
             to="/products"
@@ -185,6 +210,14 @@
             @click="closeMobileMenu"
           >
             Inventario
+          </router-link>
+          <router-link
+            to="/orders"
+            class="border-transparent text-gray-500 hover:bg-gray-100 hover:border-gray-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors duration-200"
+            active-class="bg-indigo-50 border-indigo-500 text-indigo-700"
+            @click="closeMobileMenu"
+          >
+            Órdenes
           </router-link>
           <router-link
             to="/admin"

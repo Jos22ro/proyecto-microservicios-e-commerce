@@ -81,6 +81,19 @@ const routes = [
     name: 'PaymentStatus',
     component: () => import('./views/PaymentStatus.vue'),
     meta: { requiresAuth: true, restrictedToCustomers: true }
+  },
+  // Rutas de gestión de órdenes
+  {
+    path: '/orders',
+    name: 'Orders',
+    component: () => import('./views/Orders.vue'),
+    meta: { requiresAuth: true, restrictedToCustomers: true }
+  },
+  {
+    path: '/orders/:id',
+    name: 'OrderDetail',
+    component: () => import('./views/OrderDetail.vue'),
+    meta: { requiresAuth: true, restrictedToCustomers: true }
   }
 ]
 

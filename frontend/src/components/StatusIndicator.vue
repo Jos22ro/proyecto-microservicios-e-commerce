@@ -93,6 +93,14 @@
       >
         Ver Mis Pedidos
       </button>
+
+      <button
+        v-if="status === 'APPROVED' && paymentDetails?.order_id"
+        @click="$emit('view-order-details')"
+        class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors duration-200 ml-2"
+      >
+        Ver Detalles de Orden
+      </button>
       
       <button
         v-if="status === 'PENDING' || status === 'PROCESSING'"
